@@ -1,37 +1,43 @@
-const LocalStrategy = require('passport-local').Strategy;
-const { User } = require('../models/user');
-const bcrypt = require('bcrypt');
+// bring in few things here
+const LocalStrategy = require('passport-local').Strategy; //to use passport authentication
+const User = require('../models/users'); //to work on model and its elements from and to the db
+const config = require('../config/database'); //to connect with the mongodb
+const bcrypt = require('bcryptjs');  // to comapre passwords to generate relevant messages
 
-module.exports = function (passport) {
-  // Local Strategy
-  passport.use(new LocalStrategy(function (username, password, done) {
-    // Match Username
-    let query = { username: username };
-    User.findOne(query, function (err, user) {
-      if (err) throw err;
-      if (!user) {
-        return done(null, false, { message: 'No user found' });
-      }
+// use module exports to use this js file in main app file
+module.exports = (passport)=>{
+    // write your local passport strategy here
+    passport.use(new LocalStrategy ((username, password, done)=>{
+        // use some query to match username first
+        let query = {username:username};
+        User.findOne(query, (err, user)=>{
+            if (err) throw err;
+            if(!user){
+                return done(null, false, {message:"No user found!"});
+            }
+            // If there is a user found then now we want to match the password by using bcryptjs
+            bcrypt.compare(password, user.password, ((err, isMtach)=>{
+                if (err) throw err;
+                if (isMtach){
+                    return done(null, user);
+                }else{
+                    return done(null, false, {message:"Wrong Password!"});
+                }
 
-      // Match Password
-      bcrypt.compare(password, user.password, function (err, isMatch) {
-        if (err) throw err;
-        if (isMatch) {
-          return done(null, user);
-        } else {
-          return done(null, false, { message: 'Wrong password' });
-        }
+            }));
+
+        });
+
+    }));
+    passport.serializeUser(function(user, done) {
+        done(null, user.id);
       });
-    });
-  }));
+      
+    passport.deserializeUser(function(id, done) {
+        User.findById(id, (err, user)=>{
+            done(err, user);
+        });
+        
+      });
 
-  passport.serializeUser(function (user, done) {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(function (id, done) {
-    User.findById(id, function (err, user) {
-      done(err, user);
-    });
-  });
-}
+};
