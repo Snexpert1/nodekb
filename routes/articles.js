@@ -1,134 +1,143 @@
 const express = require('express');
 const router = express.Router();
-const { Article } = require('../models/article');
-const { User } = require('../models/user');
 
-// Add Route
-router.get('/add', ensureAuthenticated, async (req, res) => {
-  res.render('add_article', {
-    title: 'Add Article'
-  });
+// bring in article model
+let article_1 = require('../models/article');
+
+// lets bring in user model to do query on this model to fetch attributes like author name
+
+let User = require('../models/users');
+
+// create another route to a page to add articles
+router.get('/add', ensureAuthenticated, (req,res)=>{
+    res.render('add_articles', {
+        title: "Add Articles"
+    });
 });
 
-// Add Submit POST Route
-router.post('/add', async (req, res) => {
-  try {
-    req.checkBody('title', 'Title is required').notEmpty();
-    req.checkBody('body', 'Body is required').notEmpty();
 
-    // Get Errors
+// load edit form
+router.get('/edit/:id', ensureAuthenticated, (req,res)=>{
+    article_1.findById(req.params.id, (err, x)=>{
+        if (x.author != req.user._id){
+            req.flash('danger', 'Not Authorized!');
+            res.redirect('/');
+        }
+        res.render('edit_article', {
+            title: 'Edit Article',
+            y: x
+        });
+        return;
+    });
+})
+
+
+
+
+// add post submit request route here
+
+router.post('/add', (req,res)=>{
+    req.checkBody('title', 'Title is mandatory').notEmpty();
+    //req.checkBody('author', 'Author is mandatory').notEmpty();
+    req.checkBody('body', 'Body is mandatory').notEmpty();
+
+// get the errors if they are any validation failures
+
     let errors = req.validationErrors();
 
-    if (errors) {
-      res.render('add_article', {
-        title: 'Add Article',
-        errors: errors
-      });
-    } else {
-      let article = await Article.create({
-        title: req.body.title,
-        author: req.user._id,
-        body: req.body.body,
-      });
-      article.save();
-      req.flash('success', 'Article Added');
-      res.redirect('/');
-    }
-  } catch (e) {
-    res.send(e);
-  }
+    if (errors){
+        res.render('add_articles', {
+            title: 'Add Article',
+            errors: errors
 
+        });
+
+    } else{
+        let article_4 = new article_1();
+        article_4.title = req.body.title;
+        article_4.author = req.user._id;
+        article_4.body = req.body.body;
+    
+        article_4.save((err)=>{
+            if (err){
+                console.log(err);
+                return;
+            }else {
+                req.flash('success', "Article added successfully");
+                res.redirect('/');
+            };
+        });
+        return;
+
+    }
+
+
+ 
 });
 
-// Load Edit Form
-router.get('/edit/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const article = await Article.findById(req.params.id);
-    if (article.author != req.user._id) {
-      req.flash('danger', 'Not Authorized');
-      return res.redirect('/');
-    }
-    res.render('edit_article', {
-      title: 'Edit Article',
-      article: article
+// Add post edit request route back to database
+router.post('/edit/:id', (req,res)=>{
+    let article_5 = {};
+    article_5.title = req.body.title;
+    article_5.author = req.body.author;
+    article_5.body = req.body.body;
+
+    let query_1 = {_id:req.params.id};
+
+    article_1.updateOne(query_1, article_5, (err)=>{
+        if (err){
+            console.log(err);
+            return;
+        }else {
+            req.flash('success', 'Article updated succefully');
+            res.redirect('/');
+        };
     });
-
-  } catch (e) {
-    res.send(e);
-  }
-
+    return;
 });
 
-// Update Submit POST Route
-router.post('/edit/:id', async (req, res) => {
-  try {
-    const article = {
-      title: req.body.title,
-      author: req.body.name,
-      body: req.body.body
-    };
+// Add delete article route here
 
-    let query = { _id: req.params.id }
+router.delete('/:id', ensureAuthenticated, (req,res)=>{
+    let query = {_id:req.params.id}
 
-    const update = await Article.update(query, article);
-    if (update) {
-      req.flash('success', 'Article Updated');
-      res.redirect('/');
-    } return;
+    article_1.deleteMany(query, (err)=>{
+        if(err){
+            console.log(err);
 
-  } catch (e) {
-    res.send(e);
-  }
-
-});
-
-// Delete Article
-router.delete('/:id', async (req, res) => {
-
-  try {
-    if (!req.user._id) {
-      res.status(500).send();
-    }
-    let query = { _id: req.params.id }
-    const article = await Article.findById(req.params.id);
-
-    if (article.author != req.user._id) {
-      res.status(500).send();
-    } else {
-      remove = await Article.findByIdAndRemove(query);
-      if (remove) {
+        }
         res.send('Success');
-      }
-    };
-  } catch (e) {
-    res.send(e);
-  }
-
-});
-
-
-
-// Get Single Article
-router.get('/:id', async (req, res) => {
-
-  const article = await Article.findById(req.params.id);
-  const user = await User.findById(article.author);
-  if (user) {
-    res.render('article', {
-      article: article,
-      author: user.name
     });
-  }
-});
 
-// Access Control
-function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  } else {
-    req.flash('danger', 'Please login');
-    res.redirect('/users/login');
-  }
-}
+});
+// route to get single article and display it user when someone clicks on article from list
+router.get('/:id', (req,res)=>{
+    article_1.findById(req.params.id, (err, x)=>{
+        User.findById(x.author, (err, t)=>{
+            
+            res.render('article', {
+                y: x,
+                r: t.username
+            
+        })
+       
+        });
+        return;
+    });
+})
+// Special function for access control or user authorisation control we can also add this special function to any
+// route that we want to protect example lets use at add article page and edit article page to protect them
+
+function ensureAuthenticated(req,res,next){
+    if (req.isAuthenticated()){
+        return next();
+
+    } else {
+        req.flash('danger', 'Please login');
+        res.redirect('/users/login');
+    }
+
+};
+
 
 module.exports = router;
