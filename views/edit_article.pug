@@ -1,16 +1,19 @@
-extends layout
+extends reusehtml
 
 block content
-  h1 #{title}
-  form(method='POST', action='/articles/edit/'+article._id)
+ h1 #{title}
+
+ // we will now create a form to add an article to database from frontend
+
+ form(method='POST', action = '/articles/edit/'+y._id)
     #form-group
-      label Title:
-      input.form-control(name='title', type='text', value=article.title)
+        label Title:
+        input.form-control(name = 'title', type = 'text', value=y.title)
     #form-group
-      label Author:
-      input.form-control(name='author', type='text', value=article.author)
+            label Author:
+            input.form-control(name = 'author', type = 'text', value= y.author)
     #form-group
-      label Body:
-      textarea.form-control(name='body')= article.body
+            label Body:
+            textarea.form-control(name = 'body')=y.body
     br
-    input.btn.btn-primary(type='submit',value='Submit')
+    input.btn.btn-primary(type = 'submit', value = 'Submit to edit article')
