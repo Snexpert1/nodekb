@@ -1,8 +1,11 @@
-extends layout
+extends reusehtml
 
 block content
-  h1 #{title}
-  ul.list-group
-    each article, i in articles
-      li.list-group-item
-        a(href="/articles/"+article._id)= article.title
+        h1 #{title}
+        ul.list-group
+            each t, i in articles1
+             li.list-group-item
+              a(href="/articles/" + t._id)= t.title 
+              
+             
+             
