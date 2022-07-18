@@ -1,12 +1,14 @@
-extends layout
+extends reusehtml
 
 block content
-  h1= article.title
-  h5 Written by #{author}
-  p= article.body
+ h1 Displaying #{y.title}
   hr
+  h5 Article Title: #{y.title}
+  h6 Written by the author: #{r}
+  p= y.body
+  hr
+
   if user
-    if user.id ==article.author
-      a.btn.btn-default(href='/articles/edit/'+article._id) Edit 
-      a.btn.btn-danger.delete-article(href='#',data-id=article._id) Delete
-  
+   if user.id == y.author
+    a.btn.btn-default(href='/articles/edit/' +y._id ) Click to edit article
+    a.btn.btn-danger.delete-article(href='#', data-id=y._id) Delete
