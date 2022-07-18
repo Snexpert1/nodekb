@@ -97,7 +97,7 @@ app.use(expressValidator({
 
 
 // bring in the passport js file here
-require('./config/passport')(passport);
+require('./middleware/passport')(passport);
 
 // now add middleware to initialize the passport authentication
 
